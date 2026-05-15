@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AliTerra Autoposter | Buffer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      color: #e0d4ff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      padding: 30px 0;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 28px;
+      background: linear-gradient(90deg, #a855f7, #ec4899, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: #a78bfa;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .card {
+      background: rgba(30, 27, 75, 0.7);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    input[type="text"], input[type="password"] {
+      flex: 1;
+      padding: 14px 18px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      background: rgba(15, 12, 41, 0.8);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      border-color: #a855f7;
+    }
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      background: rgba(15, 12, 41, 0.8);
+      color: #a5f3fc;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+    }
+    textarea:focus {
+      border-color: #06b6d4;
+    }
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(139, 92, 246, 0.2);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .btn-secondary:hover {
+      background: rgba(139, 92, 246, 0.3);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: white;
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .status {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-connected {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    .status-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    .status-icon {
+      font-size: 24px;
+    }
+    .log-container {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+    }
+    .log-success { color: #6ee7b7; }
+    .log-error { color: #fca5a5; }
+    .log-info { color: #93c5fd; }
+    .log-warning { color: #fcd34d; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #a855f7;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #a78bfa;
+      margin-top: 4px;
+    }
+    .posts-preview {
+      margin-top: 16px;
+    }
+    .post-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .post-num {
+      background: rgba(139, 92, 246, 0.3);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .post-content {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #c4b5fd;
+    }
+    .post-meta {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .post-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(6, 182, 212, 0.2);
+      color: #67e8f9;
+    }
+    .post-status {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .hidden { display: none !important; }
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .links {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .links a {
+      color: #a78bfa;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(139, 92, 246, 0.1);
+      transition: all 0.3s;
+    }
+    .links a:hover {
+      background: rgba(139, 92, 246, 0.2);
+      color: #c4b5fd;
+    }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .input-group { flex-direction: column; }
+      .flex-between { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🚀</div>
+      <h1>AliTerra Autoposter</h1>
+      <p class="subtitle">Автоматическая публикация в Twitter через Buffer API</p>
+    </div>
+
+    <!-- Подключение -->
+    <div class="card" id="connectCard">
+      <div class="card-title">🔌 Подключение к Buffer</div>
+      <div class="input-group">
+        <input type="password" id="apiKey" placeholder="Введите Buffer API Key..." />
+        <button class="btn btn-primary" id="connectBtn" onclick="connect()">
+          🔗 Подключить
+        </button>
+      </div>
+      <div id="errorStatus" class="status status-error hidden">
+        <span class="status-icon">❌</span>
+        <span id="errorText"></span>
+      </div>
+      <p style="font-size: 12px; color: #a78bfa;">
+        Получить ключ: <a href="https://publish.buffer.com/settings/api" target="_blank" style="color: #06b6d4;">publish.buffer.com/settings/api</a>
+      </p>
+    </div>
+
+    <!-- Статус подключения -->
+    <div class="card hidden" id="connectedCard">
+      <div class="status status-connected">
+        <span class="status-icon">✅</span>
+        <div>
+          <strong>Подключено к Buffer</strong>
+          <div style="font-size: 12px; opacity: 0.8;" id="channelInfo"></div>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="disconnect()">Отключить</button>
+    </div>
+
+    <!-- Редактор постов -->
+    <div class="card">
+      <div class="card-title">📝 Посты (JSON формат)</div>
+      <textarea id="postsJson" placeholder='[
+  {"text": "Ваш пост...", "delay_hours": 0},
+  {"text": "Ещё один пост...", "delay_hours": 3}
+]'></textarea>
+      <div class="flex-between" style="margin-top: 16px;">
+        <button class="btn btn-secondary" onclick="validatePosts()">✓ Проверить JSON</button>
+        <button class="btn btn-secondary" onclick="loadExample()">📋 Загрузить пример</button>
+      </div>
+    </div>
+
+    <!-- Превью постов -->
+    <div class="card hidden" id="previewCard">
+      <div class="card-title">👁️ Превью постов</div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="totalCount">0</div>
+          <div class="stat-label">Всего</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="scheduledCount">0</div>
+          <div class="stat-label">Запланировано</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="pendingCount">0</div>
+          <div class="stat-label">Ожидает</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="errorCount">0</div>
+          <div class="stat-label">Ошибки</div>
+        </div>
+      </div>
+      <div id="postsList" class="posts-preview"></div>
+    </div>
+
+    <!-- Публикация -->
+    <div class="card">
+      <div class="card-title">🚀 Публикация</div>
+      <button class="btn btn-success" id="publishBtn" onclick="publishAll()" style="width: 100%; justify-content: center; font-size: 16px; padding: 18px;" disabled>
+        📤 Запланировать все посты в Buffer
+      </button>
+    </div>
+
+    <!-- Логи -->
+    <div class="card">
+      <div class="card-title">📋 Лог выполнения</div>
+      <div class="log-container" id="logContainer">
+        <div class="log-entry log-info">👋 Добро пожаловать! Введите API ключ и посты для начала.</div>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="https://aliterra.space" target="_blank">🌍 Метавселенная</a>
+      <a href="https://t.me/LUX_Clicker_bot" target="_blank">⛏️ LUX Майнер</a>
+      <a href="https://t.me/AliTerra_meta" target="_blank">📢 Telegram</a>
+      <a href="https://buffer.com/publish" target="_blank">📊 Buffer Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    // Состояние приложения
+    let state = {
+      apiKey: '',
+      connected: false,
+      channelId: null,
+      channelName: null,
+      orgName: null,
+      posts: [],
+      postStatuses: {} // id -> 'pending' | 'scheduled' | 'error'
+    };
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('buffer_api_key');
+      if (saved) {
+        document.getElementById('apiKey').value = saved;
+      }
+      
+      const savedPosts = localStorage.getItem('aliterra_posts');
+      if (savedPosts) {
+        document.getElementById('postsJson').value = savedPosts;
+        validatePosts();
+      }
+    });
+
+    // CORS прокси
+    const PROXIES = [
+      { url: 'https://test.cors.workers.dev/?', addHeaders: {} },
+      { url: 'https://corsproxy.io/?', addHeaders: {}, encode: true },
+      { url: 'https://cors.x2u.in/', addHeaders: {} },
+    ];
+
+    async function gql(query, variables = null) {
+      const body = JSON.stringify({ query, variables });
+      
+      for (const proxy of PROXIES) {
+        try {
+          const targetUrl = proxy.encode 
+            ? encodeURIComponent('https://api.buffer.com')
+            : 'https://api.buffer.com';
+          
+          const resp = await fetch(proxy.url + targetUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.apiKey}`,
+              ...proxy.addHeaders
+            },
+            body
+          });
+
+          const text = await resp.text();
+          
+          if (!resp.ok) {
+            if (resp.status === 401) throw new Error('Неверный API ключ');
+            try {
+              const err = JSON.parse(text);
+              if (err.errors) throw new Error(err.errors.map(e => e.message).join('; '));
+            } catch (e) {
+              if (e.message.includes('API')) throw e;
+            }
+            continue; // Пробуем следующий прокси
+          }
+
+          const data = JSON.parse(text);
+          if (data.errors) throw new Error(data.errors.map(e => e.message).join('; '));
+          return data;
+        } catch (e) {
+          if (e.message.includes('API') || e.message.includes('ключ')) throw e;
+          continue;
+        }
+      }
+      throw new Error('Все CORS прокси недоступны. Попробуйте позже.');
+    }
+
+    // Логирование
+    function log(message, type = 'info') {
+      const container = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const time = new Date().toLocaleTimeString('ru-RU');
+      entry.textContent = `[${time}] ${message}`;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Подключение
+    async function connect() {
+      const apiKeyInput = document.getElementById('apiKey');
+      const btn = document.getElementById('connectBtn');
+      const errorDiv = document.getElementById('errorStatus');
+      
+      state.apiKey = apiKeyInput.value.trim();
+      if (!state.apiKey) {
+        showError('Введите API ключ');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Подключение...';
+      errorDiv.classList.add('hidden');
+      log('Подключаемся к Buffer...', 'info');
+
+      try {
+        // Получаем организацию
+        const orgData = await gql('{ account { organizations { id name } } }');
+        const orgs = orgData.data?.account?.organizations;
+        if (!orgs?.length) throw new Error('Организации не найдены');
+        
+        const orgId = orgs[0].id;
+        state.orgName = orgs[0].name;
+        log(`✓ Организация: ${state.orgName}`, 'success');
+
+        // Получаем каналы
+        const chData = await gql(
+          'query($id: OrganizationId!) { channels(input:{organizationId:$id}) { id name service } }',
+          { id: orgId }
+        );
+        const channels = chData.data?.channels || [];
+        const twitter = channels.find(c => c.service === 'twitter');
+        
+        if (!twitter) {
+          const available = channels.map(c => `${c.name} [${c.service}]`).join(', ');
+          throw new Error(`Twitter не найден. Доступно: ${available || 'ничего'}`);
+        }
+
+        state.channelId = twitter.id;
+        state.channelName = twitter.name;
+        state.connected = true;
+        
+        localStorage.setItem('buffer_api_key', state.apiKey);
+        log(`✓ Twitter канал: ${state.channelName}`, 'success');
+        log('🎉 Подключено! Теперь можно публиковать посты.', 'success');
+
+        // Обновляем UI
+        document.getElementById('connectCard').classList.add('hidden');
+        document.getElementById('connectedCard').classList.remove('hidden');
+        document.getElementById('channelInfo').textContent = `${state.orgName} → ${state.channelName}`;
+        document.getElementById('publishBtn').disabled = false;
+
+      } catch (e) {
+        log(`✗ Ошибка: ${e.message}`, 'error');
+        showError(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔗 Подключить';
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorStatus');
+      document.getElementById('errorText').textContent = message;
+      errorDiv.classList.remove('hidden');
+    }
+
+    function disconnect() {
+      state.connected = false;
+      state.channelId = null;
+      localStorage.removeItem('buffer_api_key');
+      
+      document.getElementById('connectCard').classList.remove('hidden');
+      document.getElementById('connectedCard').classList.add('hidden');
+      document.getElementById('publishBtn').disabled = true;
+      document.getElementById('apiKey').value = '';
+      
+      // Сброс статусов
+      state.postStatuses = {};
+      updatePreview();
+      
+      log('Отключено от Buffer', 'warning');
+    }
+
+    // Валидация постов
+    function validatePosts() {
+      const textarea = document.getElementById('postsJson');
+      const previewCard = document.getElementById('previewCard');
+      
+      try {
+        const posts = JSON.parse(textarea.value);
+        if (!Array.isArray(posts)) throw new Error('Должен быть массив');
+        if (posts.length === 0) throw new Error('Массив пуст');
+        
+        for (let i = 0; i < posts.length; i++) {
+          if (!posts[i].text) throw new Error(`Пост #${i+1}: отсутствует поле "text"`);
+        }
+
+        state.posts = posts;
+        state.postStatuses = {};
+        posts.forEach((_, i) => state.postStatuses[i] = 'pending');
+        
+        localStorage.setItem('aliterra_posts', textarea.value);
+        
+        previewCard.classList.remove('hidden');
+        updatePreview();
+        log(`✓ JSON валиден. Найдено постов: ${posts.length}`, 'success');
+        
+      } catch (e) {
+        previewCard.classList.add('hidden');
+        log(`✗ Ошибка JSON: ${e.message}`, 'error');
+        alert('Ошибка в JSON: ' + e.message);
+      }
+    }
+
+    function updatePreview() {
+      const list = document.getElementById('postsList');
+      const total = state.posts.length;
+      const scheduled = Object.values(state.postStatuses).filter(s => s === 'scheduled').length;
+      const errors = Object.values(state.postStatuses).filter(s => s === 'error').length;
+      const pending = total - scheduled - errors;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('scheduledCount').textContent = scheduled;
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('errorCount').textContent = errors;
+
+      list.innerHTML = state.posts.map((post, i) => {
+        const status = state.postStatuses[i] || 'pending';
+        const statusIcon = status === 'scheduled' ? '✅' : status === 'error' ? '❌' : '⏳';
+        const delay = post.delay_hours || 0;
+        
+        return `
+          <div class="post-item">
+            <div class="post-num">${i + 1}</div>
+            <div class="post-content">
+              ${escapeHtml(post.text.substring(0, 150))}${post.text.length > 150 ? '...' : ''}
+              <div class="post-meta">
+                <span class="post-badge">⏰ +${delay}ч</span>
+                ${post.link_strategy ? `<span class="post-badge">${post.link_strategy}</span>` : ''}
+              </div>
+            </div>
+            <div class="post-status">${statusIcon}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Загрузить пример
+    function loadExample() {
+      const example = [
+        {"text": "🌍 AliTerra isn't just a game. Every click = real $LUX. Launch now → start earning → build in the metaverse. 👉 t.me/LUX_Clicker_bot #AliTerra #P2E #Web3", "delay_hours": 0, "link_strategy": "in_post"},
+        {"text": "💡 3 steps to first earnings: 1️⃣ Launch bot 2️⃣ Tap 5 min/day 3️⃣ Withdraw $LUX or invest in land. Simple? Yes. Works? Proven. 🔥 #CryptoGaming #EarnCrypto #AliTerra", "delay_hours": 3, "link_strategy": "first_comment", "first_comment": "Start → aliterra.space"},
+        {"text": "📊 12,400+ players already earned $LUX via LUX Clicker. No deposits. No scams. Just sustainable economy + Telegram. Your move? 👇 #Metaverse #P2E #AliTerra", "delay_hours": 6, "link_strategy": "first_comment", "first_comment": "Join → t.me/LUX_Clicker_bot"},
+        {"text": "🎁 Referral program live: +10% earnings per friend. Invite 5 → get rare NFT skin + $LUX bonus. Share your link & grow together! 🤝 t.me/LUX_Clicker_bot #AliTerra #Referral #Web3", "delay_hours": 9, "link_strategy": "in_post"},
+        {"text": "🗺️ What's inside AliTerra? Land, shops, PvP zones — all powered by $LUX. Your tokens = your real estate. First zone opening soon! 🌱 Link in bio → aliterra.space #AliTerra #NFT #Metaverse", "delay_hours": 12, "link_strategy": "in_bio"},
+        {"text": "⚖️ Why doesn't $LUX inflate? Burn mechanism + capped supply + real in-game utilities. P2E without the bubble — it's real. Thread 👇 #Crypto #Tokenomics #AliTerra", "delay_hours": 18, "link_strategy": "in_bio"},
+        {"text": "🎮 Quick poll: What matters most in P2E? 💰 Fast withdrawals / 🏗️ Sustainable economy / 👥 Social features. Drop 1/2/3 — we're listening! 💬 #AliTerra #Web3Gaming", "delay_hours": 24, "link_strategy": "none"},
+        {"text": "⏳ Weekend = 2x drop in LUX Clicker! Launch the bot Fri 6PM–Sun 11:59PM UTC & catch x2 $LUX. Timer started! ⏱️ t.me/LUX_Clicker_bot #AliTerra #CryptoWeekend #P2E", "delay_hours": 30, "link_strategy": "in_post"},
+        {"text": "🚀 Q3 Update: ✅ Bot v2.0 🔄 NFT Marketplace 🌍 \"Desert\" Zone 🤝 Ambassador Program. Stay tuned for alpha! 🔔 Details → aliterra.space #AliTerra #Metaverse #Web3", "delay_hours": 36, "link_strategy": "in_bio"},
+        {"text": "🔑 Your key to AliTerra is in your pocket. Telegram → t.me/LUX_Clicker_bot → Start. First 1,000 users get exclusive avatar. Let's go! 🌟 #AliTerra #LUXClicker #WAGMI", "delay_hours": 42, "link_strategy": "in_post"}
+      ];
+      
+      document.getElementById('postsJson').value = JSON.stringify(example, null, 2);
+      validatePosts();
+      log('Пример загружен!', 'info');
+    }
+
+    // Публикация
+    async function publishAll() {
+      if (!state.connected || !state.channelId) {
+        alert('Сначала подключитесь к Buffer');
+        return;
+      }
+
+      if (state.posts.length === 0) {
+        alert('Добавьте посты и нажмите "Проверить JSON"');
+        return;
+      }
+
+      const btn = document.getElementById('publishBtn');
+      btn.disabled = true;
+      
+      log(`\n========== НАЧАЛО ПУБЛИКАЦИИ ==========`, 'info');
+      log(`Всего постов: ${state.posts.length}`, 'info');
+
+      const mutation = `
+        mutation CreatePost($input: CreatePostInput!) {
+          createPost(input: $input) {
+            ... on PostActionSuccess { post { id text dueAt } }
+            ... on MutationError { message }
+          }
+        }
+      `;
+
+      let success = 0, errors = 0;
+
+      for (let i = 0; i < state.posts.length; i++) {
+        const post = state.posts[i];
+        const delayHours = post.delay_hours || 0;
+        
+        btn.innerHTML = `⏳ Публикация ${i + 1}/${state.posts.length}...`;
+        log(`[${i + 1}/${state.posts.length}] ${post.text.substring(0, 50)}...`, 'info');
+
+        try {
+          const input = {
+            text: post.text,
+            channelId: state.channelId,
+            schedulingType: 'automatic',
+            mode: delayHours > 0 ? 'customScheduled' : 'addToQueue'
+          };
+
+          if (delayHours > 0) {
+            const dueAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            input.dueAt = dueAt.toISOString().replace(/\.\d{3}Z$/, '.000Z');
+          }
+
+          const result = await gql(mutation, { input });
+          const data = result.data?.createPost;
+
+          if (data?.post) {
+            state.postStatuses[i] = 'scheduled';
+            success++;
+            log(`  ✅ OK → ${data.post.dueAt || 'в очереди'}`, 'success');
+          } else if (data?.message) {
+            state.postStatuses[i] = 'error';
+            errors++;
+            log(`  ❌ ${data.message}`, 'error');
+          } else {
+            state.postStatuses[i] = 'error';
+            errors++;
+            log(`  ❌ Неожиданный ответ`, 'error');
+          }
+        } catch (e) {
+          state.postStatuses[i] = 'error';
+          errors++;
+          log(`  ❌ ${e.message}`, 'error');
+        }
+
+        updatePreview();
+        
+        // Пауза между запросами
+        if (i < state.posts.length - 1) {
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      }
+
+      log(`\n========== ЗАВЕРШЕНО ==========`, 'info');
+      log(`✅ Успешно: ${success} | ❌ Ошибок: ${errors}`, success === state.posts.length ? 'success' : 'warning');
+      
+      if (success > 0) {
+        log(`🔗 Проверьте: buffer.com/publish`, 'info');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '📤 Запланировать все посты в Buffer';
+    }
+  </script>
+</body>
+</html>
